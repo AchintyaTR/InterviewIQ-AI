@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from backend.app.database.connection import engine
 from backend.app.database.base import Base
+from backend.app.api.endpoints.auth import router as auth_router
 
 # Auto-create database tables on application start
 Base.metadata.create_all(bind=engine)
@@ -22,6 +23,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Register Subsystems Routers
+app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
+
+
 class HealthResponse(BaseModel):
     status: str
     version: str
@@ -40,4 +45,4 @@ def health_check():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
