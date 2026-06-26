@@ -5,6 +5,7 @@ from backend.app.database.connection import engine
 from backend.app.database.base import Base
 from backend.app.api.endpoints.auth import router as auth_router
 from backend.app.api.endpoints.resume import router as resume_router
+from backend.app.api.endpoints.interview import router as interview_router
 
 # Auto-create database tables on application start
 Base.metadata.create_all(bind=engine)
@@ -27,6 +28,7 @@ app.add_middleware(
 # Register Subsystems Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(resume_router, prefix="/api/v1/resumes", tags=["Resume Management"])
+app.include_router(interview_router, prefix="/api/v1/interviews", tags=["Interview Session"])
 
 
 class HealthResponse(BaseModel):
