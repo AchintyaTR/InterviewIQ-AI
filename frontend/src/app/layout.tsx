@@ -1,25 +1,34 @@
-import './globals.css';
-import type { Metadata } from 'next';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'InterviewIQ AI - AI-Powered Mock Interviews',
-  description: 'Simulate realistic mock interviews with adaptive questions matching your skills and experience.',
+  title: "InterviewIQ AI",
+  description: "Your AI-powered technical interview prep platform",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-      </head>
-      <body>
-        {children}
+      <body className={inter.className}>
+        <nav className="navbar">
+          <div className="navbar-content">
+            <a href="/" className="logo text-gradient">InterviewIQ</a>
+            <div className="nav-links">
+              <a href="/dashboard" className="nav-link">Dashboard</a>
+              <a href="/auth/login" className="nav-link login-btn">Login</a>
+            </div>
+          </div>
+        </nav>
+        <main className="main-content">
+          {children}
+        </main>
       </body>
     </html>
   );

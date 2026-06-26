@@ -1,0 +1,20 @@
+.card {
+  padding: 24px;
+  overflow: hidden;
+}
+
+.solid {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+}
+
+.hoverable {
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.hoverable:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-primary);
+}
