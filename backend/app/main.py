@@ -1,6 +1,11 @@
 from fastapi import FastAPI, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from backend.app.database.connection import engine
+from backend.app.database.base import Base
+
+# Auto-create database tables on application start
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title="InterviewIQ AI Backend API",
