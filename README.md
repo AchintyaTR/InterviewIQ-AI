@@ -1,21 +1,21 @@
 # InterviewIQ AI
 
-An AI-powered mock interview platform that simulates real technical and HR interviews, adapting questions to a candidate's resume, skills, and previous responses.
+An AI-powered mock interview platform that simulates real technical and behavioral interviews, adapting questions dynamically to a candidate's resume, selected experience level, and previous responses.
 
 ## Overview
 
-InterviewIQ AI helps candidates prepare for real interviews through personalized, adaptive evaluations. By parsing candidate resumes, conducting interactive voice-based interviews, evaluating coding challenges, and providing deep analytics, the platform replicates the rigor of top-tier company interviews.
+InterviewIQ AI helps candidates prepare for real interviews through personalized, adaptive evaluations. By parsing candidate resumes, validating job roles, conducting interactive voice-based interviews, and providing deep analytics, the platform replicates the rigor of top-tier company interviews.
 
 ## Features
 
-- **Resume Parsing & Skill Extraction:** Automatically extracts projects, languages, and technical concepts from PDF and DOCX resumes.
-- **Adaptive Question Generation:** Leverages Large Language Models (LLMs) to tailor questions dynamically based on resume context and candidate responses.
-- **Voice-Based Mock Interviews:** Integrated speech-to-text (STT) and text-to-speech (TTS) pipelines for realistic oral interviews.
-- **Automated Coding Assessments:** Sandbox environment to run coding challenges with automated test case evaluation.
-- **Retrieval-Augmented Generation (RAG):** Focuses questions on company-specific guidelines and formats retrieved from public datasets.
-- **Multi-Metric Evaluation & Feedback:** Grades responses based on technical accuracy, communication style, confidence, and answer structure.
-- **Comprehensive Analytics Dashboard:** Visual tracking of mock interview performance, strengths, weaknesses, and a personalized learning roadmap.
-- **Recruiter Dashboard:** Recruiter view to manage candidates, review performance records, and track readiness.
+- **Resume Parsing & Validation:** Automatically extracts text and technical skills from PDF and DOCX resumes. Uses LLM-based strict validation to reject invalid or junk documents.
+- **Adaptive Question Generation:** Leverages the powerful Groq AI Engine (Llama 3) to tailor questions dynamically based on resume context, job role, and the candidate's active conversation history.
+- **Experience Level Calibration:** Users can select their seniority (Fresher to 15+ years), and the AI automatically scales the difficulty and architectural depth of the questions.
+- **Role Validation:** Strict LLM gatekeeper prevents users from entering fictional or invalid job roles (e.g., "Batman").
+- **Voice-Based Mock Interviews:** Native Web Speech API integration for realistic oral interviews with real-time streaming text (Note: Voice mode requires Google Chrome or Microsoft Edge).
+- **Retrieval-Augmented Generation (RAG):** Focuses questions using relevant templates stored in a local ChromaDB vector database.
+- **Multi-Metric Evaluation & Feedback:** Grades responses based on technical accuracy, providing a final score, actionable feedback, and a personalized learning roadmap.
+- **Modern UI/UX:** A stunning, responsive Glassmorphism design system built with Next.js and custom CSS.
 
 ## Architecture
 
@@ -23,7 +23,7 @@ InterviewIQ AI helps candidates prepare for real interviews through personalized
        ┌─────────────────────────┐
        │   React/Next.js Client  │
        └────────────┬────────────┘
-                    │ HTTPS / WebSockets
+                    │ HTTP REST API
                     ▼
        ┌─────────────────────────┐
        │     FastAPI Backend     │
@@ -32,44 +32,43 @@ InterviewIQ AI helps candidates prepare for real interviews through personalized
       ┌───────┘     │      └────────┐
       ▼             ▼               ▼
 ┌───────────┐ ┌───────────┐  ┌──────────────┐
-│  Postgres │ │  ChromaDB  │  │  AI Engines  │
-│ Database  │ │ (Vector)  │  │ (LLM/RAG/STT)│
+│  SQLite   │ │  ChromaDB  │  │  AI Engines  │
+│ Database  │ │ (Vector)  │  │ (Groq LLM)   │
 └───────────┘ └───────────┘  └──────────────┘
 ```
 
 Detailed architecture flow:
-`Frontend` ➔ `FastAPI Backend` ➔ `Authentication` ➔ `Interview Engine` ➔ `Resume Parser` ➔ `RAG` ➔ `LLM` ➔ `Evaluation Engine` ➔ `PostgreSQL`
+`Frontend` ➔ `FastAPI Backend` ➔ `Authentication` ➔ `Resume Parser & Validator` ➔ `RAG (ChromaDB)` ➔ `Groq LLM` ➔ `Evaluation Engine` ➔ `SQLite`
 
 ## Tech Stack
 
-- **Frontend:** Next.js (App Router), React, CSS Modules / Tailwind (config pending)
+- **Frontend:** Next.js (App Router), React, TypeScript, Vanilla CSS Modules (Glassmorphism UI)
 - **Backend:** FastAPI (Python 3.11+), Uvicorn, SQLAlchemy
-- **Databases:** PostgreSQL (Relational Data), pgvector / ChromaDB (Vector Embeddings)
-- **AI/ML:** OpenAI GPT-4 / Anthropic Claude, LangChain, PyPDF2/pdfplumber, Whisper (Speech-to-Text), Coqui/gTTS (Text-to-Speech)
-- **DevOps:** Docker, Docker Compose, GitHub Actions (CI/CD)
+- **Databases:** SQLite (Relational Data), ChromaDB (Vector Embeddings)
+- **AI/ML:** Groq (Llama 3), OpenAI (Fallback), PyPDF2/pdfplumber, Web Speech API (STT)
+- **DevOps:** Docker, Docker Compose
 
 ## Installation
 
 ### Prerequisites
-- Docker & Docker Compose
 - Node.js v18+ (for local frontend development)
 - Python 3.11+ (for local backend development)
 
 ### Environment Variables
-Copy `.env.example` to `.env` and fill in the required variables:
+Copy `.env.example` to `.env` and fill in your Groq API key:
 ```bash
 cp .env.example .env
 ```
 
 ## Running Locally
 
-### Using Docker Compose (Recommended)
+### Using Docker Compose
 Build and run the entire application stack:
 ```bash
 docker-compose up --build
 ```
 
-### Running Components Individually
+### Running Natively (Without Docker)
 
 #### Backend:
 1. Navigate to the backend directory and activate virtual environment:
@@ -79,9 +78,10 @@ docker-compose up --build
    source venv/bin/activate  # Or venv\Scripts\activate on Windows
    pip install -r requirements.txt
    ```
-2. Start the dev server:
+2. Start the dev server from the **root project directory**:
    ```bash
-   uvicorn app.main:app --reload
+   cd ..
+   uvicorn backend.app.main:app --reload
    ```
 
 #### Frontend:
@@ -95,25 +95,9 @@ docker-compose up --build
    npm run dev
    ```
 
-## Screenshots
-
-*Screenshots will be uploaded to `docs/screenshots/` and documented here once UI components are generated.*
-
-- **Login Screen:** `docs/screenshots/login.png`
-- **Candidate Dashboard:** `docs/screenshots/dashboard.png`
-- **Resume Uploader:** `docs/screenshots/resume_upload.png`
-- **Voice Interview Interface:** `docs/screenshots/voice_interview.png`
-- **Performance Evaluation Report:** `docs/screenshots/feedback.png`
-
-## Demo Video
-
-*Placeholder link for the demonstration walkthrough.*
-
-## Future Improvements
-
-- Add peer-to-peer live mock interviews.
-- Integrate system design whiteboard drawing evaluations.
-- Real-time video emotion analysis during response speech.
+## Known Limitations & Troubleshooting
+- **Microphone Not Working:** Brave browser aggressively blocks Google's speech-to-text servers. If your microphone turns off instantly or doesn't transcribe text, you must use **Google Chrome** or **Microsoft Edge**.
+- **Session Expired:** Authentication JWTs expire after 60 minutes. You will be cleanly redirected to the login page if your session expires during setup.
 
 ## Contributors
 
