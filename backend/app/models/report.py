@@ -15,4 +15,5 @@ class Report(Base):
     score_metrics = Column(JSON, nullable=True)  # Breakdown scores
     feedback_text = Column(Text, nullable=False)
     learning_roadmap = Column(JSON, nullable=True)  # Personalized learning path
+    question_evaluations = Column(JSON, nullable=True) # Question by question breakdown
     created_at = Column(DateTime, default=datetime.utcnow)

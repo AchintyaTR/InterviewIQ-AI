@@ -80,7 +80,13 @@ def get_resume(
     """
     Retrieves extracted metadata for a specific resume.
     """
-    resume = db.query(Resume).filter(Resume.id == resume_id, Resume.user_id == current_user.id).first()
+    import uuid
+    try:
+        resume_uuid = uuid.UUID(resume_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid resume ID format")
+        
+    resume = db.query(Resume).filter(Resume.id == resume_uuid, Resume.user_id == current_user.id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
         
