@@ -11,7 +11,8 @@ export default function SetupPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
   const [targetRole, setTargetRole] = useState("");
-  const [targetCompany, setTargetCompany] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("fresher");
+  const [interviewMode, setInterviewMode] = useState<"voice" | "text">("voice");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [statusText, setStatusText] = useState("Start Interview");
@@ -52,8 +53,14 @@ export default function SetupPage() {
         body: formData,
       });
 
+      if (resumeRes.status === 401) {
+        router.push("/auth/login");
+        return;
+      }
+
       if (!resumeRes.ok) {
-        throw new Error("Failed to upload and parse resume.");
+        const errData = await resumeRes.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to upload and parse resume.");
       }
       const resumeData = await resumeRes.json();
       const resumeId = resumeData.resume_id;
@@ -69,12 +76,19 @@ export default function SetupPage() {
         body: JSON.stringify({
           resume_id: resumeId,
           target_role: targetRole,
-          target_company: targetCompany || "General"
+          interview_mode: interviewMode,
+          experience_level: experienceLevel
         })
       });
 
+      if (startRes.status === 401) {
+        router.push("/auth/login");
+        return;
+      }
+
       if (!startRes.ok) {
-        throw new Error("Failed to start interview.");
+        const errData = await startRes.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to start interview.");
       }
       
       const startData = await startRes.json();
@@ -132,13 +146,74 @@ export default function SetupPage() {
             required
           />
 
-          <Input
-            label="Target Company (Optional)"
-            type="text"
-            placeholder="e.g. Google, Stripe, Startup"
-            value={targetCompany}
-            onChange={(e) => setTargetCompany(e.target.value)}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Experience Level
+            </label>
+            <select
+              value={experienceLevel}
+              onChange={(e) => setExperienceLevel(e.target.value)}
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-glass)',
+                background: 'var(--bg-secondary)',
+                color: 'var(--text-primary)',
+                fontSize: '1rem',
+                outline: 'none',
+                width: '100%',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="fresher">Fresher</option>
+              <option value="2+ years">2+ years</option>
+              <option value="5+ years">5+ years</option>
+              <option value="10+ years">10+ years</option>
+              <option value="15+ years">15+ years</option>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Interview Mode
+            </label>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                type="button"
+                onClick={() => setInterviewMode("voice")}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: `2px solid ${interviewMode === 'voice' ? 'var(--accent-primary)' : 'var(--border-glass)'}`,
+                  background: interviewMode === 'voice' ? 'rgba(56, 189, 248, 0.1)' : 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+              >
+                🎙️ Voice
+              </button>
+              <button
+                type="button"
+                onClick={() => setInterviewMode("text")}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: `2px solid ${interviewMode === 'text' ? 'var(--accent-primary)' : 'var(--border-glass)'}`,
+                  background: interviewMode === 'text' ? 'rgba(56, 189, 248, 0.1)' : 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+              >
+                ⌨️ Text
+              </button>
+            </div>
+          </div>
 
           <Button type="submit" size="lg" className={styles.submitBtn} isLoading={isLoading}>
             {isLoading ? statusText : "Start Interview"}

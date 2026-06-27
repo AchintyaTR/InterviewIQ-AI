@@ -1,9 +1,22 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import Link from "next/link";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    setIsLoggedIn(!!localStorage.getItem("token"));
+    
+    const handleAuthChange = () => setIsLoggedIn(!!localStorage.getItem("token"));
+    window.addEventListener("auth-change", handleAuthChange);
+    return () => window.removeEventListener("auth-change", handleAuthChange);
+  }, []);
+
   return (
     <div className={styles.container}>
       {/* Hero Section */}
@@ -26,16 +39,33 @@ export default function Home() {
           </p>
           
           <div className={styles.ctaGroup}>
-            <Link href="/auth/register">
-              <Button size="lg" className="animate-pulse-glow">
-                Start Practicing Free
-              </Button>
-            </Link>
-            <Link href="/auth/login">
-              <Button variant="secondary" size="lg">
-                Sign In
-              </Button>
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link href="/setup">
+                  <Button size="lg" className="animate-pulse-glow">
+                    Start New Interview
+                  </Button>
+                </Link>
+                <Link href="/dashboard">
+                  <Button variant="secondary" size="lg">
+                    Go to Dashboard
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/register">
+                  <Button size="lg" className="animate-pulse-glow">
+                    Start Practicing Free
+                  </Button>
+                </Link>
+                <Link href="/auth/login">
+                  <Button variant="secondary" size="lg">
+                    Sign In
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

@@ -7,6 +7,15 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import styles from "../report.module.css";
 
+interface QuestionEvaluation {
+  question: string;
+  candidate_answer: string;
+  score: number;
+  feedback: string;
+  expected_answer: string;
+  keywords: string[];
+}
+
 interface ReportData {
   overall_score: number;
   accuracy_score: number;
@@ -15,6 +24,7 @@ interface ReportData {
   confidence_score: number;
   detailed_feedback: string;
   actionable_items: string[];
+  question_evaluations: QuestionEvaluation[];
 }
 
 export default function ReportPage() {
@@ -34,7 +44,7 @@ export default function ReportPage() {
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
       try {
-        const res = await fetch(`${API_URL}/report/${id}`, {
+        const res = await fetch(`${API_URL}/interviews/${id}/report`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
 
@@ -47,12 +57,32 @@ export default function ReportPage() {
           setError("Report not found or not generated yet.");
           return;
         }
+        
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.detail || "Failed to fetch report from server");
+        }
 
         const data = await res.json();
-        setReport(data);
-      } catch (err) {
+        
+        // Map backend schema to frontend expectations
+        const mappedData: ReportData = {
+          overall_score: Math.round(data.score_overall || 0),
+          accuracy_score: Math.round(data.score_metrics?.technical_accuracy || 0),
+          communication_score: Math.round(data.score_metrics?.communication_skills || 0),
+          problem_solving_score: Math.round(data.score_metrics?.problem_solving || 0),
+          confidence_score: Math.round(data.score_metrics?.confidence || 0),
+          detailed_feedback: data.feedback || "No feedback available.",
+          actionable_items: data.learning_roadmap 
+            ? data.learning_roadmap.map((item: any) => `${item.topic}: ${item.suggestion}`)
+            : [],
+          question_evaluations: data.question_evaluations || []
+        };
+        
+        setReport(mappedData);
+      } catch (err: any) {
         console.error("Failed to fetch report", err);
-        setError("Failed to load evaluation report.");
+        setError(err.message || "Failed to load evaluation report.");
       } finally {
         setIsLoading(false);
       }
@@ -135,7 +165,12 @@ export default function ReportPage() {
         </Card>
       </div>
 
-      <div className={styles.controls}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap', marginTop: '40px', paddingBottom: '40px' }}>
+        <Link href={`/report/${id}/breakdown`}>
+          <Button size="lg" className="animate-pulse-glow">
+            View Detailed Question-by-Question Feedback
+          </Button>
+        </Link>
         <Link href="/dashboard">
           <Button size="lg" variant="secondary">Return to Dashboard</Button>
         </Link>

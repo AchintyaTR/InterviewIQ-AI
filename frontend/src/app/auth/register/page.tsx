@@ -71,7 +71,7 @@ export default function RegisterPage() {
           <Input
             label="Email Address"
             type="email"
-            placeholder="you@example.com"
+            placeholder="johndoe@example.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -93,7 +93,7 @@ export default function RegisterPage() {
         <div className={styles.footer}>
           Already have an account?{" "}
           <Link href="/auth/login" className={styles.link}>
-            Sign in
+            Log in
           </Link>
         </div>
       </Card>

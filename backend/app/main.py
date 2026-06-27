@@ -34,6 +34,19 @@ app.include_router(interview_router, prefix="/api/v1/interviews", tags=["Intervi
 app.include_router(report_router, prefix="/api/v1/interviews", tags=["Reports"])
 app.include_router(speech_router, prefix="/api/v1/speech", tags=["Audio & Speech Processing"])
 
+from fastapi.responses import JSONResponse
+import traceback
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    print("🔥 GLOBAL EXCEPTION CAUGHT:")
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Server Error: {str(exc)}"},
+        headers={"Access-Control-Allow-Origin": "*"}
+    )
+
 
 class HealthResponse(BaseModel):
     status: str

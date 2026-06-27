@@ -27,7 +27,7 @@ export default function LoginPage() {
       formData.append("password", password);
 
       const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
-      const res = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${API_URL}/auth/token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -43,7 +43,8 @@ export default function LoginPage() {
       const data = await res.json();
       // Store token in localStorage
       localStorage.setItem("token", data.access_token);
-      
+      window.dispatchEvent(new Event("auth-change"));
+
       // Redirect to dashboard
       router.push("/dashboard");
     } catch (err: any) {
@@ -58,7 +59,7 @@ export default function LoginPage() {
       <Card className={`animate-fade-in ${styles.authCard}`}>
         <div className={styles.header}>
           <h1 className={styles.title}>Welcome Back</h1>
-          <p className={styles.subtitle}>Sign in to continue your interview prep.</p>
+          <p className={styles.subtitle}>Log in to continue your interview prep.</p>
         </div>
 
         {error && <div className={styles.errorAlert}>{error}</div>}
@@ -81,7 +82,7 @@ export default function LoginPage() {
             required
           />
           <Button type="submit" className={styles.submitBtn} isLoading={isLoading}>
-            Sign In
+            Log In
           </Button>
         </form>
 

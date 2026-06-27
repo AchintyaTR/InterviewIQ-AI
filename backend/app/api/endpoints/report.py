@@ -26,7 +26,13 @@ def get_interview_report(
     Retrieves the evaluation report for an interview.
     If the interview is completed but no report exists, it generates one.
     """
-    interview = db.query(Interview).filter(Interview.id == interview_id, Interview.user_id == current_user.id).first()
+    import uuid
+    try:
+        int_uuid = uuid.UUID(interview_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid interview ID format")
+
+    interview = db.query(Interview).filter(Interview.id == int_uuid, Interview.user_id == current_user.id).first()
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
         
@@ -34,19 +40,20 @@ def get_interview_report(
         raise HTTPException(status_code=400, detail="Interview must be completed before generating a report")
         
     # Check if report already exists
-    existing_report = db.query(Report).filter(Report.interview_id == interview_id).first()
+    existing_report = db.query(Report).filter(Report.interview_id == int_uuid).first()
     if existing_report:
         return {
             "report_id": existing_report.id,
             "score_overall": existing_report.score_overall,
             "score_metrics": existing_report.score_metrics,
-            "feedback": existing_report.feedback,
+            "feedback": existing_report.feedback_text,
             "learning_roadmap": existing_report.learning_roadmap,
+            "question_evaluations": existing_report.question_evaluations,
             "created_at": existing_report.created_at
         }
         
     # If not, generate the report
-    questions = db.query(Question).filter(Question.interview_id == interview_id).order_by(Question.order_index.asc()).all()
+    questions = db.query(Question).filter(Question.interview_id == int_uuid).order_by(Question.order_index.asc()).all()
     
     history = []
     for q in questions:
@@ -59,11 +66,12 @@ def get_interview_report(
     evaluation = evaluator.evaluate_interview_session(history=history)
     
     new_report = Report(
-        interview_id=interview_id,
+        interview_id=int_uuid,
         score_overall=evaluation.get("score_overall", 0.0),
         score_metrics=evaluation.get("score_metrics", {}),
-        feedback=evaluation.get("feedback", "No feedback provided."),
-        learning_roadmap=evaluation.get("learning_roadmap", [])
+        feedback_text=evaluation.get("feedback", "No feedback provided."),
+        learning_roadmap=evaluation.get("learning_roadmap", []),
+        question_evaluations=evaluation.get("question_evaluations", [])
     )
     db.add(new_report)
     db.commit()
@@ -73,7 +81,8 @@ def get_interview_report(
         "report_id": new_report.id,
         "score_overall": new_report.score_overall,
         "score_metrics": new_report.score_metrics,
-        "feedback": new_report.feedback,
+        "feedback": new_report.feedback_text,
         "learning_roadmap": new_report.learning_roadmap,
+        "question_evaluations": new_report.question_evaluations,
         "created_at": new_report.created_at
     }
