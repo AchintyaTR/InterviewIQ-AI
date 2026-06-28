@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/Card";
 import styles from "./dashboard.module.css";
 
 interface Interview {
-  interview_id: str;
+  interview_id: string;
   target_role: string;
   target_company: string;
   status: "completed" | "in_progress";
@@ -120,9 +120,6 @@ export default function DashboardPage() {
         <Card className={styles.emptyState}>
           <h3>No Interviews Yet</h3>
           <p>Ready to test your skills? Start a new mock interview session now.</p>
-          <Link href="/setup">
-            <Button>Start Interview</Button>
-          </Link>
         </Card>
       ) : (
         <div className={styles.grid}>
