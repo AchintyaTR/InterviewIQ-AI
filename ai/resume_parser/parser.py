@@ -74,13 +74,57 @@ class ResumeParser:
         return "Unknown Candidate"
 
     def _extract_skills(self, text: str) -> list:
-        found_skills = set()
-        text_lower = text.lower()
-        for skill in self.common_skills:
-            # Word boundary regex for skills
-            if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
-                found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
-        return list(found_skills)
+        if not self.client:
+            # Fallback to simple regex if no API client is configured
+            found_skills = set()
+            text_lower = text.lower()
+            for skill in self.common_skills:
+                if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
+                    found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
+            return list(found_skills)
+
+        system_prompt = (
+            "You are a technical recruiter AI. Extract a comprehensive list of all technical skills, "
+            "programming languages, frameworks, databases, tools, and relevant soft skills from the following resume text. "
+            "Return ONLY a valid JSON array of strings representing the skills. Do not include any markdown, backticks, or explanations. "
+            "Example output: [\"Python\", \"React\", \"Docker\", \"AWS\"]"
+        )
+        
+        text_sample = text[:3000]
+        
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": text_sample}
+                ],
+                max_tokens=200,
+                temperature=0.0
+            )
+            
+            import json
+            ans = response.choices[0].message.content.strip()
+            
+            # Clean up markdown if the LLM accidentally wraps it
+            if ans.startswith("```json"):
+                ans = ans[7:-3].strip()
+            elif ans.startswith("```"):
+                ans = ans[3:-3].strip()
+                
+            skills = json.loads(ans)
+            if isinstance(skills, list):
+                return skills
+            return []
+        except Exception as e:
+            print(f"Error extracting skills via LLM: {e}")
+            # Fallback to regex if LLM fails
+            found_skills = set()
+            text_lower = text.lower()
+            for skill in self.common_skills:
+                if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
+                    found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
+            return list(found_skills)
 
     def _is_valid_resume(self, text: str) -> bool:
         if not self.client:
