@@ -14,6 +14,8 @@ services:
       - JWT_SECRET_KEY=dev_secret_key_change_in_production
     depends_on:
       - db
+    volumes:
+      - ./logs:/app/logs
   frontend:
     build:
       context: ./frontend

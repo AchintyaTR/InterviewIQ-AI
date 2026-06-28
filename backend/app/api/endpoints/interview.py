@@ -12,6 +12,8 @@ from backend.app.models.interview import Interview
 from backend.app.models.question import Question
 from backend.app.models.response import Response
 
+from backend.app.utils.token_logger import log_token_usage
+
 from ai.question_generator.generator import QuestionGenerator
 from ai.rag.retriever import RAGRetriever
 
@@ -80,11 +82,12 @@ def start_interview(
     }
     
     # Generate the first question
-    first_q_text = question_generator.generate_next_question(
+    first_q_text, tokens = question_generator.generate_next_question(
         candidate_profile=candidate_profile, 
         history=[], 
         rag_templates=templates
     )
+    log_token_usage(str(interview.id), "Generate First Question", tokens)
     
     db_question = Question(
         interview_id=interview.id,
@@ -174,11 +177,12 @@ def submit_response(
     query_str = f"Follow-up interview question for {interview.target_role} covering {resume.extracted_skills[0] if resume.extracted_skills else 'general'}"
     templates = rag_retriever.retrieve_relevant_templates(query=query_str, limit=1)
     
-    next_q_text = question_generator.generate_next_question(
+    next_q_text, tokens = question_generator.generate_next_question(
         candidate_profile=candidate_profile,
         history=history,
         rag_templates=templates
     )
+    log_token_usage(str(interview.id), f"Generate Question {len(questions) + 1}", tokens)
     
     next_question = Question(
         interview_id=interview.id,

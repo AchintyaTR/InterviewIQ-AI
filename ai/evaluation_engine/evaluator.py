@@ -75,7 +75,7 @@ class InterviewEvaluator:
         Expects `history` to be a list of dictionaries with 'role' ('system' or 'user') and 'content'.
         """
         if not self.client or not history:
-            return self._fallback_evaluation(history)
+            return self._fallback_evaluation(history), 0
 
         num_questions = sum(1 for item in history if item.get("role") == "system")
         
@@ -134,8 +134,9 @@ class InterviewEvaluator:
             if raw_content.endswith("```"):
                 raw_content = raw_content[:-3]
                 
-            return json.loads(raw_content)
+            tokens = response.usage.total_tokens if response.usage else 0
+            return json.loads(raw_content), tokens
             
         except Exception as e:
             print(f"Error generating evaluation via LLM: {e}")
-            return self._fallback_evaluation(history)
+            return self._fallback_evaluation(history), 0

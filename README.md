@@ -25,7 +25,7 @@ graph TD
     User([Candidate]) -->|Interacts via Voice/Text| NextJS[Next.js Frontend]
     
     %% API Requests
-    NextJS -->|HTTP REST JSON| FastAPI[FastAPI Backend]
+    NextJS -->|HTTP REST (JSON)| FastAPI[FastAPI Backend]
     
     %% FastAPI Modules
     subgraph FastAPI Application Logic
@@ -60,7 +60,8 @@ graph TD
 ```
 
 ### Process Breakdown:
-1. **Frontend (Next.js)** captures the user's microphone using the Native Web Speech API, converts voice to text locally, and sends REST API calls to the backend.
+1. **Frontend (Next.js)** captures the user's
+ microphone using the Native Web Speech API, converts voice to text locally, and sends REST API calls to the backend.
 2. **Authentication (FastAPI)** intercepts all requests to ensure the user has a valid JSON Web Token (JWT).
 3. **Resume Processing:** When a user uploads a resume, FastAPI uses `pdfplumber` to extract text. It then asks the Groq LLM to act as a "Gatekeeper" to ensure the resume and requested job role are legitimate (blocking fake inputs like "Batman").
 4. **Interview Session (RAG + AI):** During the interview, FastAPI queries **ChromaDB** to find relevant technical templates based on the job role. It combines this template, the user's resume, and the chat history into a massive prompt and sends it to **Groq**.
