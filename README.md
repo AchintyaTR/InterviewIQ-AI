@@ -17,34 +17,55 @@ InterviewIQ AI helps candidates prepare for real interviews through personalized
 - **Multi-Metric Evaluation & Feedback:** Grades responses based on technical accuracy, providing a final score, actionable feedback, and a personalized learning roadmap.
 - **Modern UI/UX:** A stunning, responsive Glassmorphism design system built with Next.js and custom CSS.
 
-## Architecture
+## Architecture & Workflow
 
-```text
-       ┌─────────────────────────┐
-       │   React/Next.js Client  │
-       └────────────┬────────────┘
-                    │ HTTP REST API
-                    ▼
-       ┌─────────────────────────┐
-       │     FastAPI Backend     │
-       └──────┬─────┬──────┬─────┘
-              │     │      │
-      ┌───────┘     │      └────────┐
-      ▼             ▼               ▼
-┌───────────┐ ┌───────────┐  ┌──────────────┐
-│PostgreSQL │ │  ChromaDB  │  │  AI Engines  │
-│ Database  │ │ (Vector)  │  │ (Groq LLM)   │
-└───────────┘ └───────────┘  └──────────────┘
+```mermaid
+graph TD
+    %% User and Frontend
+    User([Candidate]) -->|Interacts via Voice/Text| NextJS[Next.js Frontend]
+    
+    %% API Requests
+    NextJS -->|HTTP REST (JSON)| FastAPI[FastAPI Backend]
+    
+    %% FastAPI Modules
+    subgraph FastAPI Application Logic
+        FastAPI --> Auth{JWT Auth Middleware}
+        
+        %% 1. Resume Flow
+        Auth -->|/resumes| ResumeApp[Resume Processing Module]
+        ResumeApp -->|Extracts Text| PyPDF[PDF/DOCX Parser]
+        PyPDF -->|Raw Text| Validator[LLM Role Gatekeeper]
+        
+        %% 2. Interview Flow
+        Auth -->|/interviews| InterviewApp[Interview Session Engine]
+        InterviewApp -->|Search Templates| RAG[RAG Retrieval System]
+        InterviewApp -->|Context + History| AI_Prompt[Prompt Builder]
+        
+        %% 3. Report Flow
+        Auth -->|/reports| ReportApp[Evaluation Module]
+    end
+
+    %% External AI
+    Validator -->|Validate Profile| GroqCloud((Groq Llama 3 API))
+    AI_Prompt -->|Generate Question| GroqCloud
+    ReportApp -->|Calculate Metrics| GroqCloud
+
+    %% Databases
+    subgraph Data Persistence
+        RAG -->|Similarity Search| ChromaDB[(ChromaDB Vector Store)]
+        ResumeApp -->|Store Profile| Postgres[(PostgreSQL Relational DB)]
+        InterviewApp -->|Save Q&A| Postgres
+        ReportApp -->|Fetch History| Postgres
+    end
 ```
 
-Detailed architecture flow:
-1. **Frontend (Next.js)** handles UI state, Native Web Speech API for voice recording, and sends REST API calls.
-2. **FastAPI Backend** processes requests and orchestrates the AI logic.
-3. **Authentication Layer** secures endpoints with JWT.
-4. **Resume Parser & Validator** extracts data from uploaded documents and uses an LLM to prevent junk inputs.
-5. **RAG (ChromaDB)** retrieves relevant technical interview templates to ground the AI.
-6. **AI Engine (Groq Llama 3)** generates hyper-personalized questions and evaluates the user's responses in real-time.
-7. **PostgreSQL Database** securely stores user profiles, interview history, and performance reports (with local SQLite fallback during bare-metal dev).
+### Process Breakdown:
+1. **Frontend (Next.js)** captures the user's microphone using the Native Web Speech API, converts voice to text locally, and sends REST API calls to the backend.
+2. **Authentication (FastAPI)** intercepts all requests to ensure the user has a valid JSON Web Token (JWT).
+3. **Resume Processing:** When a user uploads a resume, FastAPI uses `pdfplumber` to extract text. It then asks the Groq LLM to act as a "Gatekeeper" to ensure the resume and requested job role are legitimate (blocking fake inputs like "Batman").
+4. **Interview Session (RAG + AI):** During the interview, FastAPI queries **ChromaDB** to find relevant technical templates based on the job role. It combines this template, the user's resume, and the chat history into a massive prompt and sends it to **Groq**.
+5. **Evaluation Engine:** Once the interview is complete, FastAPI feeds the entire transcript back into the LLM to grade technical accuracy, communication skills, and generates a personalized improvement roadmap.
+6. **Data Storage:** All unstructured vector data is handled by **ChromaDB**, while all relational data (users, transcripts, grades) is permanently stored in **PostgreSQL**.
 
 ## Tech Stack
 
