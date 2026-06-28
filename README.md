@@ -32,19 +32,25 @@ InterviewIQ AI helps candidates prepare for real interviews through personalized
       ┌───────┘     │      └────────┐
       ▼             ▼               ▼
 ┌───────────┐ ┌───────────┐  ┌──────────────┐
-│  SQLite   │ │  ChromaDB  │  │  AI Engines  │
+│PostgreSQL │ │  ChromaDB  │  │  AI Engines  │
 │ Database  │ │ (Vector)  │  │ (Groq LLM)   │
 └───────────┘ └───────────┘  └──────────────┘
 ```
 
 Detailed architecture flow:
-`Frontend` ➔ `FastAPI Backend` ➔ `Authentication` ➔ `Resume Parser & Validator` ➔ `RAG (ChromaDB)` ➔ `Groq LLM` ➔ `Evaluation Engine` ➔ `SQLite`
+1. **Frontend (Next.js)** handles UI state, Native Web Speech API for voice recording, and sends REST API calls.
+2. **FastAPI Backend** processes requests and orchestrates the AI logic.
+3. **Authentication Layer** secures endpoints with JWT.
+4. **Resume Parser & Validator** extracts data from uploaded documents and uses an LLM to prevent junk inputs.
+5. **RAG (ChromaDB)** retrieves relevant technical interview templates to ground the AI.
+6. **AI Engine (Groq Llama 3)** generates hyper-personalized questions and evaluates the user's responses in real-time.
+7. **PostgreSQL Database** securely stores user profiles, interview history, and performance reports (with local SQLite fallback during bare-metal dev).
 
 ## Tech Stack
 
 - **Frontend:** Next.js (App Router), React, TypeScript, Vanilla CSS Modules (Glassmorphism UI)
 - **Backend:** FastAPI (Python 3.11+), Uvicorn, SQLAlchemy
-- **Databases:** SQLite (Relational Data), ChromaDB (Vector Embeddings)
+- **Databases:** PostgreSQL (Docker) / SQLite (Local fallback), ChromaDB (Vector Embeddings)
 - **AI/ML:** Groq (Llama 3), OpenAI (Fallback), PyPDF2/pdfplumber, Web Speech API (STT)
 - **DevOps:** Docker, Docker Compose
 
