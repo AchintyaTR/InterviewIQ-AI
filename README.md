@@ -25,7 +25,7 @@ graph TD
     User([Candidate]) -->|Interacts via Voice/Text| NextJS[Next.js Frontend]
     
     %% API Requests
-    NextJS -->|HTTP REST (JSON)| FastAPI[FastAPI Backend]
+    NextJS -->|HTTP REST JSON| FastAPI[FastAPI Backend]
     
     %% FastAPI Modules
     subgraph FastAPI Application Logic
