@@ -8,6 +8,7 @@ from backend.app.auth.dependencies import get_current_user
 from backend.app.models.user import User
 from backend.app.models.resume import Resume
 from ai.resume_parser.parser import ResumeParser
+from backend.app.utils.token_logger import log_token_usage
 
 router = APIRouter()
 
@@ -64,6 +65,8 @@ async def upload_resume(
     db.add(db_resume)
     db.commit()
     db.refresh(db_resume)
+    
+    log_token_usage(f"Resume {db_resume.id}", "Parse Resume and Skills", parsed_data.get("tokens", 0))
 
     return {
         "resume_id": db_resume.id,

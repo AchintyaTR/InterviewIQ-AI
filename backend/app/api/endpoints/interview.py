@@ -52,7 +52,8 @@ def start_interview(
     resume = db.query(Resume).filter(Resume.id == resume_uuid, Resume.user_id == current_user.id).first()
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
-    if not question_generator.is_valid_role(request.target_role):
+    is_valid_role, role_tokens = question_generator.is_valid_role(request.target_role)
+    if not is_valid_role:
         raise HTTPException(status_code=400, detail="The target role provided is not a valid profession. Please enter a real job title.")
 
     full_target_role = f"{request.target_role} ({request.experience_level} experience)"
@@ -68,6 +69,8 @@ def start_interview(
     db.add(interview)
     db.commit()
     db.refresh(interview)
+    
+    log_token_usage(str(interview.id), "Validate Target Role", role_tokens)
     
     # Retrieve RAG templates based on role
     query_str = f"Interview questions for {request.target_role}"
