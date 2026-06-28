@@ -73,7 +73,7 @@ class ResumeParser:
             return lines[0]
         return "Unknown Candidate"
 
-    def _extract_skills(self, text: str) -> list:
+    def _analyze_resume(self, text: str) -> tuple[bool, list]:
         if not self.client:
             # Fallback to simple regex if no API client is configured
             found_skills = set()
@@ -81,13 +81,17 @@ class ResumeParser:
             for skill in self.common_skills:
                 if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
                     found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
-            return list(found_skills)
+            return True, list(found_skills)
 
         system_prompt = (
-            "You are a technical recruiter AI. Extract a comprehensive list of all technical skills, "
-            "programming languages, frameworks, databases, tools, and relevant soft skills from the following resume text. "
-            "Return ONLY a valid JSON array of strings representing the skills. Do not include any markdown, backticks, or explanations. "
-            "Example output: [\"Python\", \"React\", \"Docker\", \"AWS\"]"
+            "You are a technical recruiter AI. Analyze the following text extracted from a document. "
+            "1. Determine if it represents a professional resume or CV. "
+            "2. Extract a comprehensive list of all technical skills, programming languages, frameworks, databases, tools, and relevant soft skills. "
+            "Return ONLY a valid JSON object with exactly two keys: "
+            "\"is_valid\" (boolean, true if it is a resume, false if random junk/not a resume) and "
+            "\"skills\" (array of strings, empty if none). "
+            "Do not include any markdown, backticks, or explanations. "
+            "Example output: {\"is_valid\": true, \"skills\": [\"Python\", \"React\", \"Docker\"]}"
         )
         
         text_sample = text[:3000]
@@ -99,7 +103,7 @@ class ResumeParser:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": text_sample}
                 ],
-                max_tokens=200,
+                max_tokens=250,
                 temperature=0.0
             )
             
@@ -112,49 +116,21 @@ class ResumeParser:
             elif ans.startswith("```"):
                 ans = ans[3:-3].strip()
                 
-            skills = json.loads(ans)
-            if isinstance(skills, list):
-                return skills
-            return []
+            data = json.loads(ans)
+            is_valid = data.get("is_valid", True)
+            skills = data.get("skills", [])
+            if not isinstance(skills, list):
+                skills = []
+            return is_valid, skills
         except Exception as e:
-            print(f"Error extracting skills via LLM: {e}")
+            print(f"Error analyzing resume via LLM: {e}")
             # Fallback to regex if LLM fails
             found_skills = set()
             text_lower = text.lower()
             for skill in self.common_skills:
                 if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
                     found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
-            return list(found_skills)
-
-    def _is_valid_resume(self, text: str) -> bool:
-        if not self.client:
-            return True # Fallback if no API key
-            
-        system_prompt = (
-            "You are a strict resume validation assistant. "
-            "Analyze the following text extracted from a document. "
-            "Determine if it represents a professional resume or CV. "
-            "If it is a resume (contains work experience, education, skills, or contact info), reply ONLY with 'YES'. "
-            "If it is random junk, a recipe, a manual, a random article, or clearly not a resume, reply ONLY with 'NO'."
-        )
-        
-        text_sample = text[:2500]
-        
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model_name,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": text_sample}
-                ],
-                max_tokens=10,
-                temperature=0.0
-            )
-            ans = response.choices[0].message.content.strip().upper()
-            return "YES" in ans
-        except Exception as e:
-            print(f"Error validating resume via LLM: {e}")
-            return True # Fallback if error
+            return True, list(found_skills)
 
     def parse_file(self, file_path: str) -> dict:
         """
@@ -176,11 +152,12 @@ class ResumeParser:
         if not text:
             return {"parsed_status": "error", "message": "Could not extract text from document"}
 
-        if not self._is_valid_resume(text):
+        is_valid, skills = self._analyze_resume(text)
+        
+        if not is_valid:
             return {"parsed_status": "error", "message": "The uploaded document does not appear to be a valid resume. Please upload a professional CV or Resume."}
 
         name = self._extract_name(text)
-        skills = self._extract_skills(text)
         
         # Simple heuristic for experience for now (can be improved with LLM later)
         experience = [{"company": "Various", "role": "Professional", "duration": "See Resume"}]
