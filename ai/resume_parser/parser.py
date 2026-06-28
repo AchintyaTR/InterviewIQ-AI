@@ -73,7 +73,7 @@ class ResumeParser:
             return lines[0]
         return "Unknown Candidate"
 
-    def _analyze_resume(self, text: str) -> tuple[bool, list]:
+    def _analyze_resume(self, text: str) -> tuple[bool, list, int]:
         if not self.client:
             # Fallback to simple regex if no API client is configured
             found_skills = set()
@@ -81,7 +81,7 @@ class ResumeParser:
             for skill in self.common_skills:
                 if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
                     found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
-            return True, list(found_skills)
+            return True, list(found_skills), 0
 
         system_prompt = (
             "You are a technical recruiter AI. Analyze the following text extracted from a document. "
@@ -121,7 +121,8 @@ class ResumeParser:
             skills = data.get("skills", [])
             if not isinstance(skills, list):
                 skills = []
-            return is_valid, skills
+            tokens = response.usage.total_tokens if response.usage else 0
+            return is_valid, skills, tokens
         except Exception as e:
             print(f"Error analyzing resume via LLM: {e}")
             # Fallback to regex if LLM fails
@@ -130,7 +131,7 @@ class ResumeParser:
             for skill in self.common_skills:
                 if re.search(r'\b' + re.escape(skill) + r'\b', text_lower):
                     found_skills.add(skill.title() if len(skill) > 3 else skill.upper())
-            return True, list(found_skills)
+            return True, list(found_skills), 0
 
     def parse_file(self, file_path: str) -> dict:
         """
@@ -152,7 +153,7 @@ class ResumeParser:
         if not text:
             return {"parsed_status": "error", "message": "Could not extract text from document"}
 
-        is_valid, skills = self._analyze_resume(text)
+        is_valid, skills, tokens = self._analyze_resume(text)
         
         if not is_valid:
             return {"parsed_status": "error", "message": "The uploaded document does not appear to be a valid resume. Please upload a professional CV or Resume."}
@@ -167,6 +168,7 @@ class ResumeParser:
             "skills": skills,
             "experience": experience,
             "raw_text": text,
+            "tokens": tokens,
             "parsed_status": "success"
         }
 

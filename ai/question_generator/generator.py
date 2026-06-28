@@ -20,12 +20,12 @@ class QuestionGenerator:
             self.client = None
             self.model_name = None
 
-    def is_valid_role(self, role: str) -> bool:
+    def is_valid_role(self, role: str) -> tuple[bool, int]:
         """
         Validates if the provided string is a legitimate job role/profession.
         """
         if not self.client:
-            return True # Fallback if no LLM
+            return True, 0 # Fallback if no LLM
             
         system_prompt = (
             "You are a strict data validation assistant. "
@@ -45,10 +45,11 @@ class QuestionGenerator:
                 temperature=0.0
             )
             ans = response.choices[0].message.content.strip().upper()
-            return "YES" in ans
+            tokens = response.usage.total_tokens if response.usage else 0
+            return "YES" in ans, tokens
         except Exception as e:
             print(f"Error validating role via LLM: {e}")
-            return True
+            return True, 0
 
     def generate_next_question(self, candidate_profile: dict, history: list, rag_templates: list = None) -> str:
         """
