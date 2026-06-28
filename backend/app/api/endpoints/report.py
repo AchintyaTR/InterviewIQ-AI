@@ -10,6 +10,7 @@ from backend.app.models.question import Question
 from backend.app.models.response import Response
 from backend.app.models.report import Report
 
+from backend.app.utils.token_logger import log_token_usage
 from ai.evaluation_engine.evaluator import InterviewEvaluator
 
 router = APIRouter()
@@ -63,7 +64,8 @@ def get_interview_report(
             history.append({"role": "user", "content": resp.response_text})
             
     # Evaluate using the LLM engine
-    evaluation = evaluator.evaluate_interview_session(history=history)
+    evaluation, eval_tokens = evaluator.evaluate_interview_session(history=history)
+    log_token_usage(str(interview.id), "Generate Final Report", eval_tokens)
     
     new_report = Report(
         interview_id=int_uuid,

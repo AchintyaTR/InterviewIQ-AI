@@ -62,10 +62,10 @@ class QuestionGenerator:
             
             if not history:
                 if rag_templates:
-                    return f"Welcome! Let's start with a scenario: {rag_templates[0]['question']}"
-                return f"Welcome! I noticed you have experience with {primary_skill}. Can you tell me about a project where you used it?"
+                    return f"Welcome! Let's start with a scenario: {rag_templates[0]['question']}", 0
+                return f"Welcome! I noticed you have experience with {primary_skill}. Can you tell me about a project where you used it?", 0
             
-            return f"That's interesting. Given your background in {primary_skill}, can you explain a challenge you faced and how you overcame it?"
+            return f"That's interesting. Given your background in {primary_skill}, can you explain a challenge you faced and how you overcame it?", 0
         
         # --- OpenAI LLM Generation ---
         system_prompt = (
@@ -101,7 +101,8 @@ class QuestionGenerator:
                 max_tokens=150,
                 temperature=0.7
             )
-            return response.choices[0].message.content.strip()
+            tokens = response.usage.total_tokens if response.usage else 0
+            return response.choices[0].message.content.strip(), tokens
         except Exception as e:
             print(f"Error generating question via LLM: {e}")
-            return "Could you tell me more about your recent project experience?"
+            return "Could you tell me more about your recent project experience?", 0
